@@ -1,0 +1,33 @@
+::ng-deep {
+    .cdk-overlay-pane{
+        position: absolute !important;
+        z-index: 1200;
+        left: 40%;
+        top:20px
+      }
+    .snackbar {
+      min-height: auto !important;
+      line-height: normal;
+      color: #f4f4f4;
+      font-size: 0.95rem;
+      .inner {
+        overflow: hidden;
+      }
+  
+      i {
+        font-size: 24px;
+      }
+    }
+  
+    .error-snackbar {
+      .mdc-snackbar__surface {
+        background: red !important;
+      }
+    }
+  
+    .success-snackbar {
+      .mdc-snackbar__surface {
+        background: green !important;
+      }
+    }
+  }

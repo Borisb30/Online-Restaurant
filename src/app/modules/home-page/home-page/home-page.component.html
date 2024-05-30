@@ -1,0 +1,98 @@
+<main class="d-flex w-100">
+    <section class="p-4 ">
+        <div class="filter-section p-5">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{selectedCategory? selectedCategory : 'კატეგორიები'}}
+                </button>
+                <ul class="dropdown-menu">
+                    @for(items of categoryItems; track items){
+                    <li>
+                        <div class="dropdown-item" (click)="receiveCategory(items)">{{ items }}</div>
+                    </li>
+                    }
+                </ul>
+            </div>
+            <div>
+                <mat-radio-group [(ngModel)]="withNuts" class="d-flex flex-column">
+                    <mat-radio-button class="py-3 " [value]="1">თხილით</mat-radio-button>
+                    <mat-radio-button class="py-3 " [value]="2">თხილის გარეშე</mat-radio-button>
+                </mat-radio-group>
+                <mat-radio-group [(ngModel)]="vegan" class="d-flex flex-column">
+                    <mat-radio-button class="py-3" [value]="3">ვეგეტარიანული</mat-radio-button>
+                    <mat-radio-button class="py-3" [value]="4">არა ვეგეტარიანული</mat-radio-button>
+                </mat-radio-group>
+            </div>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{'სიცხარე: ' + ' ' + selectedHottnes}}
+                </button>
+                <ul class="dropdown-menu">
+                    @for(items of hottnes; track items){
+                    <li>
+                        <div class="dropdown-item" (click)="receiveHottnes(items)">{{ items }}</div>
+                    </li>
+                    }
+                </ul>
+            </div>
+            <div class="py-3 row">
+                <button type="button" (click)="filter()" class="btn btn-success my-2 px-3">Search</button>
+                <button type="button" (click)="clear()" class="btn btn-danger mb-2 px-3">Clear</button>
+            </div>
+        </div>
+    </section>
+    <section class="right d-flex flex-wrap justify-content-center">
+        @if(filteredProducts.length){
+        @for(element of filteredProducts; track element){
+        <div class="card m-4" style="width: 18rem;">
+            <img [src]="element.photoUrl" class="card-img-top" [alt]="element.name">
+            <div class="card-body">
+                <h5 class="card-title">{{element.name}}</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">{{'კატეგორია: '+element.categories}}</li>
+                <li class="list-group-item">
+                    {{'სიცხარე: '}}
+                    @if(element.hottnes > 0){
+                    @for(number of [].constructor(element.hottnes); track number){
+                    <svg-icon src="/assets/images/icons/pepper-icon.svg"></svg-icon>
+                    }
+                    } @else {
+                    <img src="/assets/images/icons/no-pepper-icon.png" class="svg-icon">
+                    }
+                </li>
+                <li class="list-group-item d-inline-flex align-items-center">
+                    {{'თხილით: '}}
+                    <div class="svg-icon ml-3">
+                        @if(element.withNuts){
+                        <svg-icon src="/assets/images/icons/nut-1.svg"></svg-icon>
+                        } @else {
+                        <img class="svg-icon" src="/assets/images/icons/no-nuts-icon.png">
+                        }
+                    </div>
+                </li>
+                <li class="list-group-item d-inline-flex align-items-center">
+                    {{'ვეგეტარიანული: '}}
+                    <div class="svg-icon ml-3">
+                        @if(element.vegan){
+                        <svg-icon src="/assets/images/icons/vegan-icon.svg"></svg-icon>
+                        } @else {
+                        <svg-icon src="/assets/images/icons/eggless-icon.svg"></svg-icon>
+                        }
+                    </div>
+                </li>
+                <li class="list-group-item">{{'ფასი: '+element.price + ' ლარი'}}</li>
+            </ul>
+            <div class="card-body">
+                <button type="button" class="btn btn-primary px-2" (click)="addToCart(element)">კალათში
+                    დამატება</button>
+            </div>
+        </div>
+        }
+        } @else {
+        <h3>
+            {{'მონაცემები არ მოიძებნა'}}
+        </h3>
+        }
+    </section>
+</main>
