@@ -1,31 +1,30 @@
-<main class="d-flex w-100">
-    <section class="p-4 ">
-        <div class="filter-section p-5">
+@if(loadingFlag){
+<app-loader />
+}
+<main class="row w-100 justify-content-center">
+    <section class="col-xl-3 col-lg-3 col-md-6">
+        <div class="filter-section d-flex flex-column align-items-center p-5">
             <div class="btn-group" role="group">
                 <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{selectedCategory? selectedCategory : 'კატეგორიები'}}
+                    {{selectedCategory? selectedCategory.name : 'კატეგორიები'}}
                 </button>
                 <ul class="dropdown-menu">
                     @for(items of categoryItems; track items){
                     <li>
-                        <div class="dropdown-item" (click)="receiveCategory(items)">{{ items }}</div>
+                        <div class="dropdown-item" (click)="receiveCategory(items)">{{ items.name }}</div>
                     </li>
                     }
                 </ul>
             </div>
-            <div>
-                <mat-radio-group [(ngModel)]="withNuts" class="d-flex flex-column">
-                    <mat-radio-button class="py-3 " [value]="1">თხილით</mat-radio-button>
-                    <mat-radio-button class="py-3 " [value]="2">თხილის გარეშე</mat-radio-button>
-                </mat-radio-group>
-                <mat-radio-group [(ngModel)]="vegan" class="d-flex flex-column">
-                    <mat-radio-button class="py-3" [value]="3">ვეგეტარიანული</mat-radio-button>
-                    <mat-radio-button class="py-3" [value]="4">არა ვეგეტარიანული</mat-radio-button>
-                </mat-radio-group>
+            <div class="d-flex flex-column">
+                <mat-checkbox class="example-margin py-2" [(ngModel)]="nuts">{{nuts?'თხილით':'თხილის
+                    გარეშე'}}</mat-checkbox>
+                <mat-checkbox class="example-margin pb-2" [(ngModel)]="vegeterian">{{vegeterian?'ვეგეტარიანული':'არა
+                    ვეგეტარიანული'}}</mat-checkbox>
             </div>
             <div class="btn-group" role="group">
                 <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{'სიცხარე: ' + ' ' + selectedHottnes}}
+                    {{'სიცხარე: ' + ' ' + spiciness}}
                 </button>
                 <ul class="dropdown-menu">
                     @for(items of hottnes; track items){
@@ -41,20 +40,20 @@
             </div>
         </div>
     </section>
-    <section class="right d-flex flex-wrap justify-content-center">
-        @if(filteredProducts.length){
-        @for(element of filteredProducts; track element){
+    <section class="col-xl-9 col-12 d-flex flex-wrap justify-content-center">
+        @if(productList && productList.length){
+        @for(element of productList; track element){
         <div class="card m-4" style="width: 18rem;">
-            <img [src]="element.photoUrl" class="card-img-top" [alt]="element.name">
+            <img [src]="element.image" class="card-img-top" [alt]="element.name">
             <div class="card-body">
                 <h5 class="card-title">{{element.name}}</h5>
             </div>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item">{{'კატეგორია: '+element.categories}}</li>
+                <li class="list-group-item">{{'კატეგორია: '+element?.categoryName}}</li>
                 <li class="list-group-item">
                     {{'სიცხარე: '}}
-                    @if(element.hottnes > 0){
-                    @for(number of [].constructor(element.hottnes); track number){
+                    @if(element.spiciness > 0){
+                    @for(number of [].constructor(element.spiciness); track number){
                     <svg-icon src="/assets/images/icons/pepper-icon.svg"></svg-icon>
                     }
                     } @else {
@@ -64,7 +63,7 @@
                 <li class="list-group-item d-inline-flex align-items-center">
                     {{'თხილით: '}}
                     <div class="svg-icon ml-3">
-                        @if(element.withNuts){
+                        @if(element.nuts){
                         <svg-icon src="/assets/images/icons/nut-1.svg"></svg-icon>
                         } @else {
                         <img class="svg-icon" src="/assets/images/icons/no-nuts-icon.png">
@@ -74,7 +73,7 @@
                 <li class="list-group-item d-inline-flex align-items-center">
                     {{'ვეგეტარიანული: '}}
                     <div class="svg-icon ml-3">
-                        @if(element.vegan){
+                        @if(element.vegeterian){
                         <svg-icon src="/assets/images/icons/vegan-icon.svg"></svg-icon>
                         } @else {
                         <svg-icon src="/assets/images/icons/eggless-icon.svg"></svg-icon>

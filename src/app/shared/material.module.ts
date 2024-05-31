@@ -7,8 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox'
 
-const modules =  [
+const modules = [
   MatInputModule,
   MatButtonModule,
   MatCardModule,
@@ -16,6 +17,7 @@ const modules =  [
   MatRadioModule,
   AngularSvgIconModule,
   MatSnackBarModule,
+  MatCheckboxModule
 ]
 
 @NgModule({

@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { RestaurantService } from '../../../core/services/restaurant/restaurant.service';
-import { ProductsModel } from '../../../shared/models/products.model';
-import { Products } from '../../../shared/products/products';
+import { AddBasketPOST, DropdownModel, GetFilteredItems, ProductInBasketModel, ProductsModel, UpdateBasketPUT } from '../../../shared/models/products.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { InfoSnackBarComponent } from '../../../core/component/info-snack-bar/info-snack-bar.component';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-home-page',
@@ -11,93 +11,126 @@ import { InfoSnackBarComponent } from '../../../core/component/info-snack-bar/in
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent implements OnInit {
-  categoryItems: string[] = [
-    'Salads', 'Soups', 'Chicken-Dishes', 'Beef-Dishes', 'Seafood-Dishes', 'Vegetable-Dishes',
-    'Bits&Bites', 'On-The-Side', 'არცერთი'
-  ];
+  categoryItems!: DropdownModel[];
   hottnes: number[] = [0, 1, 2, 3, 4];
-  selectedCategory!: string;
-  selectedHottnes: number = 0;
-  withNuts!: number | null;
-  vegan!: number | null;
-  cartStorage: ProductsModel[] = [];
-  productList!: ProductsModel[];
-  filteredProducts!: ProductsModel[];
+  spiciness: number = 0;
+  selectedCategory!: DropdownModel | null;
+  nuts!: boolean;
+  vegeterian!: boolean;
+  productList: ProductsModel[] = [];
+  cartStorage: ProductInBasketModel[] = [];
+  loadingFlag: boolean = false;
+
   constructor(
     private restaurantService: RestaurantService,
     private snackBar: MatSnackBar,
   ) { }
 
   ngOnInit(): void {
-    this.productList = Products;
-    this.filteredProducts = [...this.productList];
-    // this.getApiInfo();
-    this.cartStorage = this.getStorageItems();
+    this.getAllProducts();
+    this.getAllCategories();
+    this.getAllBasketItems();
   }
 
-  receiveCategory(items: string) {
-    if (items == 'არცერთი') {
-      this.selectedCategory = '';
+  receiveCategory(category: DropdownModel) {
+    if (category.id == 0) {
+      this.selectedCategory = { id: 0, name: 'არცერთი' };
     } else {
-      this.selectedCategory = items;
+      this.selectedCategory = category;
     }
   }
-  getStorageItems() {
-    let storageItems = localStorage.getItem('cartStorage');
-    if (storageItems) {
-      let cartItems = JSON.parse(storageItems);
-      return cartItems;
-    } else {
-      return [];
-    }
-  }
-  receiveHottnes(hottnes: number) {
-    this.selectedHottnes = hottnes;
+
+  receiveHottnes(spiciness: number) {
+    this.spiciness = spiciness;
 
   }
 
   addToCart(element: ProductsModel) {
-    const productInCart = this.cartStorage.find(product => product.id === element.id);
+    const productIndex = this.cartStorage.findIndex(product => product.product.id === element.id);
 
-    if (productInCart) {
-      productInCart.quantity = (productInCart.quantity || 0) + 1;
+    let model: AddBasketPOST | UpdateBasketPUT;
+    if (productIndex == -1) {
+      model = {
+        quantity: 1,
+        price: element.price,
+        productId: element.id
+      };
+      this.restaurantService.addToBasket(model).subscribe(
+        res => {
+          this.getAllBasketItems();
+        });
     } else {
-      element.quantity = 1;
-      this.cartStorage.push(element);
+      model = {
+        quantity: this.cartStorage[productIndex].quantity + 1,
+        price: element.price,
+        productId: element.id
+      };
+      this.restaurantService.updateBasket(model).subscribe(
+        res => {
+          this.getAllBasketItems();
+        });
     }
-    this.snackbarAdapter(`${element.name} კალათში წარმატებით დაემატა`, true,2)
-    localStorage.setItem('cartStorage', JSON.stringify(this.cartStorage));
+    this.snackbarAdapter(`${element.name} კალათში წარმატებით დაემატა`, true, 2);
   }
 
-  // getApiInfo() {
-  //   this.restaurantService.getRestaurantInfo().subscribe(res => {
-  //     console.log(res)
-  //   })
-  // }
-  addToStorage() {
-
-    localStorage.setItem('cartStorage', JSON.stringify(this.cartStorage));
-
-    console.log(localStorage.getItem('cartStorage')?.length)
+  getAllProducts() {
+    this.loadingFlag = true;
+    this.restaurantService.getAllProducts().pipe(finalize(() => { this.loadingFlag = false; })).subscribe(res => {
+      this.productList = res;
+      this.mapProductsToCategories();
+    })
   }
+  getAllCategories() {
+    this.loadingFlag = true;
+    this.restaurantService.getAllCategories().pipe(finalize(() => { this.loadingFlag = false; })).subscribe(res => {
+      this.categoryItems = res;
+      this.categoryItems.push({ id: 0, name: 'არცერთი' });
+      this.mapProductsToCategories();
+    })
+  }
+
+  getAllBasketItems() {
+    this.loadingFlag = true;
+    this.restaurantService.getAllBasketItems().pipe(finalize(() => { this.loadingFlag = false; })
+    ).subscribe(res => {
+      this.cartStorage = res;
+    })
+  }
+
   filter() {
-    this.filteredProducts = this.productList.filter(item => {
-      const categoryMatch = !this.selectedCategory || item.categories === this.selectedCategory;
-      const withNutsMatch = this.withNuts === undefined || (this.withNuts === 1 ? item.withNuts : !item.withNuts);
-      const veganMatch = this.vegan === undefined || (this.vegan === 3 ? item.vegan : !item.vegan);
-      const hottnesMatch = this.selectedHottnes === undefined || item.hottnes === this.selectedHottnes;
-
-      return categoryMatch && withNutsMatch && veganMatch && hottnesMatch;
-    });
+    let model: GetFilteredItems = {
+      vegeterian: this.vegeterian ? 1 : 2,
+      nuts: this.nuts ? 1 : 2,
+      spiciness: this.spiciness,
+      categoryId: this.selectedCategory?.id ?? null,
+    }
+    this.restaurantService.getFilteredProducts(model).pipe
+      (finalize(() => { this.loadingFlag = false; })
+      ).subscribe(res => {
+        this.productList = res;
+        this.mapProductsToCategories();
+      })
   }
 
   clear() {
-    this.selectedCategory = 'არცერთი';
-    this.selectedHottnes = 0;
-    this.withNuts = null;
-    this.vegan = null;
-    this.filteredProducts = [...this.productList];
+    this.selectedCategory = { id: 0, name: 'არცერთი' };
+    this.spiciness = 0;
+    this.nuts = false;
+    this.vegeterian = false;
+    this.getAllProducts();
+    this.snackbarAdapter(`ფილტრი წარმატებით გასუფთავდა`, true, 3)
   }
+
+  mapProductsToCategories() {
+    this.productList = this.productList.map(product => {
+      const category = this.categoryItems.find(cat => cat.id === +product.categoryId);
+      return {
+        ...product,
+        categoryName: category ? category.name : 'Unknown'
+      };
+    });
+  }
+
 
   snackbarAdapter(msg: string, success: boolean, sec?: number) {
 

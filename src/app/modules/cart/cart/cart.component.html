@@ -1,3 +1,6 @@
+@if(loadingFlag){
+<app-loader />
+}
 <div>
     <h2>{{ 'კალათში ნივთების რაოდენობა: ' + itemsQuantity }}</h2>
 </div>
@@ -16,33 +19,35 @@
         @if(cartStorage.length){
         @for(element of cartStorage; track element; let index = $index){
         <tr>
-            <th scope="row">{{index + 1}}</th>
-            <td><img [src]="element.photoUrl" alt=""></td>
-            <td>{{element.name}}</td>
-            <td>{{element.price + ' ლარი'}}</td>
-            <td>
+            <th class="align-middle" scope="row">{{index + 1}}</th>
+            <td class="align-middle">
+                <img class="image" [src]="element.product.image" [alt]="element.product.name">
+            </td>
+            <td class="align-middle">{{element.product.name}}</td>
+            <td class="align-middle">{{element.price + ' ლარი'}}</td>
+            <td class="align-middle">
                 <div class="d-inline-flex justify-content-center align-items-center">
-                    <svg-icon class="mr-2 svg-icon" (click)="addItem(element)"
+                    <svg-icon class="mr-2 svg-icon" (click)="addItem(element.product)"
                         src="/assets/images/icons/plus-icon.svg"></svg-icon>
                     <div class="px-3">
                         {{element.quantity}}
                     </div>
-                    <svg-icon class="ml-2 svg-icon" (click)="removeItem(element)"
+                    <svg-icon class="ml-2 svg-icon" (click)="removeItem(element.product)"
                         src="/assets/images/icons/minus-icon.svg"></svg-icon>
                 </div>
             </td>
-            <td>{{element.price * (element.quantity ?? 1) + ' ლარი'}}</td>
+            <td class="align-middle">{{element.price + ' ლარი'}}</td>
         </tr>
         }} @else {
-            <h4>კალათი ცარიელია</h4>
+        <h4>კალათი ცარიელია</h4>
         }
     </tbody>
 </table>
 <div class="d-flex justify-content-end">
     {{ 'ჯამური ფასი: ' + totalPrice + ' ლარი'}}
 </div>
-<div class="d-flex justify-content-end">
+<!-- <div class="d-flex justify-content-end">
     <button type="button" (click)="buy()" class="btn btn-success m-2 px-3">შეძენა</button>
     <button type="button" (click)="clearCart()" class="btn btn-danger my-2 px-3">კალათის გასუფთავება</button>
 
-</div>
+</div> -->

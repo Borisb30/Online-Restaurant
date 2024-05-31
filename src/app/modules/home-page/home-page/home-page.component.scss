@@ -12,3 +12,8 @@
 .svg-icon {
     width: 40px;
 }
+
+.btn-group-vertical > .btn, .btn-group > .btn {
+    position: static;
+    flex: none;
+}

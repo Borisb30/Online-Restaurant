@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ProductsModel } from '../../../shared/models/products.model';
+import { ProductInBasketModel, ProductsModel, UpdateBasketPUT } from '../../../shared/models/products.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { InfoSnackBarComponent } from '../../../core/component/info-snack-bar/info-snack-bar.component';
+import { RestaurantService } from '../../../core/services/restaurant/restaurant.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
@@ -10,31 +12,30 @@ import { InfoSnackBarComponent } from '../../../core/component/info-snack-bar/in
 })
 export class CartComponent implements OnInit {
 
-  cartStorage!: ProductsModel[];
+  cartStorage: ProductInBasketModel[] = [];
   itemsQuantity!: number;
   totalPrice!: number;
-
+  loadingFlag: boolean = false;
   constructor(
     private snackBar: MatSnackBar,
+    private restaurantService: RestaurantService
   ) { }
 
   ngOnInit(): void {
-    this.cartStorage = this.getStorageItems();
-    this.itemsQuantity = this.getItemsQuantity()
-    this.totalPrice = this.getTotalPrice();
+    
+    this.getAllBasketItems();
   }
 
-  getStorageItems() {
-    let storageItems = localStorage.getItem('cartStorage');
-    if (storageItems) {
-      let cartItems = JSON.parse(storageItems);
-      return cartItems;
-    } else {
-      return [];
-    }
+  getAllBasketItems(){
+    this.loadingFlag = true;
+    this.restaurantService.getAllBasketItems().pipe(finalize(() => { this.loadingFlag = false; })
+  ).subscribe(res => {
+      this.cartStorage = res;
+      this.totalPrice = this.getTotalPrice();
+      this.itemsQuantity = this.getItemsQuantity();
+    })
   }
-
-  getItemsQuantity(): number {
+  getItemsQuantity() {
     let quantity = 0;
     this.cartStorage.forEach((element) => {
       if (element.quantity) {
@@ -44,7 +45,7 @@ export class CartComponent implements OnInit {
     return quantity;
   }
 
-  getTotalPrice(): number {
+  getTotalPrice()  {
     let total = 0;
     this.cartStorage.forEach((element) => {
       total += element.price * (element.quantity ?? 1);
@@ -53,52 +54,44 @@ export class CartComponent implements OnInit {
   }
 
   addItem(element: ProductsModel): void {
-    const item = this.cartStorage.find(item => item.id === element.id);
-    if (item) {
-      item.quantity = (item.quantity || 0) + 1;
-    } else {
-      element.quantity = 1;
-      this.cartStorage.push(element);
-    }
-    this.updateCart();
+    this.loadingFlag = true
+    const productIndex = this.cartStorage.findIndex(product => product.product.id === element.id);
+    let model: UpdateBasketPUT;
+    model = {
+      quantity: this.cartStorage[productIndex].quantity + 1,
+      price: element.price,
+      productId: element.id
+    };
+    this.restaurantService.updateBasket(model).subscribe(
+      res => {
+        this.getAllBasketItems();
+      });
   }
 
   removeItem(element: ProductsModel): void {
-    const item = this.cartStorage.find(item => item.id === element.id);
-    if (item && item.quantity) {
-      item.quantity -= 1;
-      if (item.quantity <= 0) {
-        this.cartStorage = this.cartStorage.filter(item => item.id !== element.id);
-      }
-      this.updateCart();
-    }
-  }
-
-  updateCart(): void {
-    localStorage.setItem('cartStorage', JSON.stringify(this.cartStorage));
-    this.itemsQuantity = this.getItemsQuantity();
-    this.totalPrice = this.getTotalPrice();
-  }
-
-  buy() {
-    if (this.cartStorage.length) {
-      this.snackbarAdapter(`თქვენ წარმატებით შეიძინეთ კერძები რაოდენობით: ${this.itemsQuantity}, რომლის ჯამური ფასია: ${this.totalPrice} ლარი`, true)
-      this.cartStorage = [];
-      this.updateCart();
+    const foundProduct = this.cartStorage.find(product => product.product.id === element.id);
+    if( foundProduct && foundProduct?.quantity > 1) {
+      let model: UpdateBasketPUT;
+      model = {
+        quantity: foundProduct.quantity - 1,
+        price: element.price,
+        productId: element.id
+      };
+      this.restaurantService.updateBasket(model).subscribe(
+        res => {
+          this.getAllBasketItems();
+        });
     } else {
-      this.snackbarAdapter(`კალათი ცარიელია`, false)
+      this.restaurantService.deleteProduct(element.id).subscribe(
+        res=> {
+          
+          this.getAllBasketItems();
+        }
+      )
     }
+
   }
 
-  clearCart() {
-    if (this.cartStorage.length) {
-      this.snackbarAdapter(`კალათა წარმატებით გასუფთავდა`, true)
-      this.cartStorage = [];
-      this.updateCart();
-    } else {
-      this.snackbarAdapter(`კალათი ცარიელია`, false)
-    }
-  }
   snackbarAdapter(msg: string, success: boolean, sec?: number) {
 
     const statusClass = success ? 'success-snackbar' : 'error-snackbar';
